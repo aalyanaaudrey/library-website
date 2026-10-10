@@ -128,11 +128,15 @@ function Invoke-Sync {
     if ($pendingCount -le 0) { return }   # clean tree, nothing to push
 
     if (Test-RemoteReachable) {
-        git push -u origin HEAD --quiet 2>&1 | Out-Null
+        # Capture real git output instead of guessing why a push failed.
+        $pushOut = @(git push -u origin HEAD 2>&1)
         if ($LASTEXITCODE -eq 0) {
             Write-Log "Pushed $pendingCount commit(s) to $Upstream"
         } else {
-            Write-Log "Push rejected (auth/permission). $pendingCount commit(s) kept locally." "WARN"
+            $detail = ($pushOut | Where-Object { $_ -match 'error|rejected|fatal|denied|Authentication' }) -join ' | '
+            if (-not $detail) { $detail = ($pushOut -join ' | ') }
+            if (-not $detail) { $detail = "git push exited with code $LASTEXITCODE" }
+            Write-Log "Push failed. $pendingCount commit(s) kept locally. $detail" "WARN"
         }
     } else {
         Write-Log "Remote unreachable - $pendingCount commit(s) held locally, will retry." "WARN"
