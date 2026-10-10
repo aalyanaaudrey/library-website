@@ -484,11 +484,20 @@ secret to manage. `.env` is git-ignored; `.env.example` is committed.
 
 ### Boot sequence
 
-`npm start` runs `prisma db push && tsx prisma/seed.ts && next start`.
+`npm start` runs `node scripts/preflight.mjs && prisma db push && tsx prisma/seed.ts && next start`.
+
+`preflight.mjs` loads `.env` itself (plain Node does not) and fails fast with a
+readable message when `DATABASE_URL` is missing, relative-in-production, or
+unwritable — that is what turns a Railway crash loop into a one-line diagnosis.
+
 `db push` is idempotent and the seed self-guards (it exits immediately if any
 user row exists, unless `--force` is passed), so both are safe to run on every
 container start. That is what makes a fresh volume populate itself on first
 boot without wiping data on later ones.
+
+If the database is unreachable at request time, `app/global-error.tsx` renders
+a self-contained page explaining the Railway setup instead of Next's default
+"Application error: a server-side exception".
 
 ---
 

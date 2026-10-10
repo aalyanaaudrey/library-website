@@ -74,6 +74,22 @@ host must provide:
 Volume is `file:/data/library.db` — absolute on purpose. A relative
 `file:./dev.db` resolves inside the build output and vanishes on redeploy.
 
+### If it crash-loops
+
+The start command is gated by `scripts/preflight.mjs`, which runs before
+Prisma and prints the exact misconfiguration into the deploy log. Read the
+first `[preflight]` line:
+
+| Log says | Cause |
+|---|---|
+| `FATAL: DATABASE_URL is not set` | The variable is missing from Service → Variables |
+| `FATAL: DATABASE_URL is relative` | `file:./dev.db` — needs an absolute path on a Volume |
+| `FATAL: Cannot write to "/data"` | No Volume is mounted at `/data` |
+| `WARNING: we just created "/data"` | The dir was created by the app, so it is probably **not** a Volume — data will not survive a redeploy |
+
+Every page is `force-dynamic`, so the build never touches the database; a
+build failure is unrelated to `DATABASE_URL`.
+
 To move to a managed database later, add Railway's Postgres plugin, set
 `DATABASE_URL` to its connection string, and change `provider = "sqlite"` to
 `"postgresql"` in `prisma/schema.prisma`.
