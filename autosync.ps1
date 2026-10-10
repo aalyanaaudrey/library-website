@@ -77,9 +77,13 @@ function Test-RemoteReachable {
     # Probes the remote using the same credential helper a real push uses, so
     # it doubles as an auth check. Pass the REMOTE NAME, not a tracking ref -
     # "origin/main" does not exist locally until the first push succeeds.
-    # Returns $false when offline.
-    git ls-remote --exit-code origin HEAD 2>&1 | Out-Null
-    return ($LASTEXITCODE -eq 0)
+    #
+    # Do NOT use --exit-code here: it returns 2 when no refs match, and a
+    # brand-new empty repository always has no refs. That made the first push
+    # (the one that matters most) look like an offline failure.
+    #   0 = refs found, 2 = reachable but empty, 128 = offline/auth failure.
+    git ls-remote origin HEAD 2>&1 | Out-Null
+    return ($LASTEXITCODE -eq 0 -or $LASTEXITCODE -eq 2)
 }
 
 function Get-PendingCount {
