@@ -1,6 +1,28 @@
 # Library Website
 
-A library website project, built with OpenCode.
+A library management website built with **Next.js 15 · TypeScript · PostgreSQL · Prisma · Auth.js**.
+
+📖 **[Full system architecture →](./ARCHITECTURE.md)**
+
+## Features
+
+| Area | Capabilities |
+|---|---|
+| **Book Catalog** | Browse, search by title/author/ISBN, filter by genre & year, live availability |
+| **Borrowing & Rental** | Borrow/rent requests, renewals, due dates, transaction history |
+| **User Accounts** | Register, login, profile, borrowing history, balances |
+| **Admin Dashboard** | Inventory CRUD, approve/reject requests, record returns, penalties, reports |
+| **Announcements & Reviews** | Library blog posts, star ratings and member reviews |
+
+**Roles:** `MEMBER` → `LIBRARIAN` → `ADMIN`, enforced in middleware, service layer, and UI.
+
+## Project skills
+
+Twelve focused skills are installed in `.opencode/skills/` for this stack:
+
+`nextjs-developer` · `react-expert` · `typescript-pro` · `fullstack-dev` ·
+`api-designer` · `postgres-pro` · `database-optimizer` · `secure-code-guardian` ·
+`web-design` · `test-master` · `code-reviewer` · `debugging-wizard`
 
 ## Auto-sync to GitHub
 
