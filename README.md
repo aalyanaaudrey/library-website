@@ -1,6 +1,6 @@
 # Library Website
 
-A library management website built with **Next.js 15 · TypeScript · PostgreSQL · Prisma · Auth.js**.
+A library management website built with **Next.js 15 · React 19 · TypeScript · SQLite + Prisma · Tailwind CSS v4**.
 
 📖 **[Full system architecture →](./ARCHITECTURE.md)**
 
@@ -8,13 +8,43 @@ A library management website built with **Next.js 15 · TypeScript · PostgreSQL
 
 | Area | Capabilities |
 |---|---|
-| **Book Catalog** | Browse, search by title/author/ISBN, filter by genre & year, live availability |
-| **Borrowing & Rental** | Borrow/rent requests, renewals, due dates, transaction history |
-| **User Accounts** | Register, login, profile, borrowing history, balances |
-| **Admin Dashboard** | Inventory CRUD, approve/reject requests, record returns, penalties, reports |
-| **Announcements & Reviews** | Library blog posts, star ratings and member reviews |
+| **Book Catalog** | Browse, search by title/author/ISBN/keyword, filter by **genre, category and publication year**, sort, paginate, live availability |
+| **Borrowing & Rental** | Borrow or rent requests, chosen period, fee and expected return shown up front, approve/reject, collect, renew within library rules, full loan history |
+| **User Accounts** | Register, sign in, edit profile and password, current and past borrowings, due dates, outstanding balance, in-app notifications |
+| **Admin Dashboard** | Add/edit/remove books, availability per copy, approve/reject requests, record hand-outs and returns, overdue sweep, penalties and rental fees, report cards |
+| **Announcements & Reviews** | Library news with pinned posts, star ratings and member reviews (one per member per book) |
 
-**Roles:** `MEMBER` → `LIBRARIAN` → `ADMIN`, enforced in middleware, service layer, and UI.
+**Roles:** `MEMBER` → `LIBRARIAN` → `ADMIN`, enforced by capability checks in the route layout, the service layer and the UI.
+
+## Getting started
+
+```bash
+npm install
+npm run setup      # prisma generate + db push + seed
+npm run dev        # http://localhost:3000
+```
+
+Production build: `npm run build && npm start`.
+
+Other scripts: `npm run db:reset` (drop and reseed), `npm run db:studio`,
+`npm run db:seed`.
+
+Copy `.env.example` to `.env` and set `AUTH_SECRET` before deploying.
+
+### Demo accounts
+
+Password for all four is `password123`.
+
+| Email | Role |
+|---|---|
+| `admin@library.test` | ADMIN |
+| `librarian@library.test` | LIBRARIAN |
+| `member@library.test` | MEMBER |
+| `priya@library.test` | MEMBER |
+
+The seed creates 31 books, 30 authors, 20 genres, 119 physical copies,
+4 announcements and 11 reviews. The database file (`prisma/dev.db`) is
+git-ignored, so every fresh clone starts clean.
 
 ## Project skills
 

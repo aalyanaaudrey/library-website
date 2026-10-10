@@ -15,15 +15,22 @@ jspm_packages/
 .pnp.js
 
 # --- Build output ---
+.next/
+out/
 dist/
 build/
-out/
-.next/
 .nuxt/
 .svelte-kit/
 .cache/
 .turbo/
 *.tsbuildinfo
+next-env.d.ts
+
+# --- Database (local dev only - never commit) ---
+prisma/dev.db
+prisma/dev.db-journal
+*.sqlite
+*.sqlite3
 
 # --- Logs ---
 *.log

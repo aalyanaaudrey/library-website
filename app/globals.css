@@ -1,0 +1,199 @@
+@import "tailwindcss";
+
+/* --------------------------------------------------------------------------
+   Design tokens
+   A warm, editorial "reading room" palette: cream paper, deep green ink,
+   amber accents. Serif display type for headings, humanist sans for UI.
+   -------------------------------------------------------------------------- */
+@theme {
+  --color-paper: #fbf8f3;
+  --color-paper-2: #f4efe6;
+  --color-paper-3: #ebe3d6;
+  --color-ink: #1b1a17;
+  --color-ink-2: #44403a;
+  --color-ink-3: #6f695f;
+  --color-line: #e0d8ca;
+
+  --color-forest: #1f4d3d;
+  --color-forest-2: #173b2f;
+  --color-forest-3: #2d6a52;
+  --color-forest-soft: #e6efea;
+
+  --color-amber: #b45309;
+  --color-amber-soft: #fdf3e3;
+
+  --font-display: Georgia, "Iowan Old Style", "Times New Roman", serif;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+
+  --shadow-card: 0 1px 2px rgba(27, 26, 23, 0.04), 0 8px 24px -12px rgba(27, 26, 23, 0.12);
+  --shadow-lift: 0 2px 4px rgba(27, 26, 23, 0.05), 0 18px 40px -18px rgba(27, 26, 23, 0.25);
+}
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  * {
+    border-color: var(--color-line);
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    color: var(--color-ink);
+    letter-spacing: -0.015em;
+  }
+
+  ::selection {
+    background: var(--color-forest);
+    color: #fff;
+  }
+
+  /* Visible, consistent focus for keyboard users. */
+  :focus-visible {
+    outline: 2px solid var(--color-forest-3);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  input,
+  textarea,
+  select {
+    font-family: inherit;
+  }
+}
+
+@layer components {
+  /* Subtle paper grain behind hero areas. */
+  .paper-grain {
+    background-image: radial-gradient(
+        circle at 1px 1px,
+        rgba(27, 26, 23, 0.045) 1px,
+        transparent 0
+      );
+    background-size: 22px 22px;
+  }
+
+  .rule {
+    background: linear-gradient(
+      to right,
+      transparent,
+      var(--color-line) 12%,
+      var(--color-line) 88%,
+      transparent
+    );
+  }
+
+  .field {
+    @apply w-full rounded-lg border border-line bg-white px-3.5 py-2.5 text-[15px] text-ink
+      placeholder:text-ink-3 transition
+      focus:border-forest-3 focus:outline-none focus:ring-4 focus:ring-forest/10;
+  }
+
+  .field-error {
+    @apply border-red-400 focus:border-red-500 focus:ring-red-500/10;
+  }
+
+  .label {
+    @apply mb-1.5 block text-sm font-medium text-ink-2;
+  }
+
+  /* Tailwind v4 forbids `@apply`-ing a user-defined class, so every variant
+     repeats the shared button properties rather than `@apply btn`. */
+  .btn,
+  .btn-primary,
+  .btn-secondary,
+  .btn-ghost,
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm
+      font-semibold transition duration-150 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-primary {
+    @apply bg-forest text-white hover:bg-forest-2 active:scale-[.98];
+  }
+
+  .btn-secondary {
+    @apply border border-line bg-white text-ink hover:bg-paper-2 active:scale-[.98];
+  }
+
+  .btn-ghost {
+    @apply text-ink-2 hover:bg-paper-2 hover:text-ink;
+  }
+
+  .btn-danger {
+    @apply bg-red-600 text-white hover:bg-red-700 active:scale-[.98];
+  }
+
+  .card {
+    @apply rounded-xl border border-line bg-white shadow-card;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium
+      ring-1 ring-inset whitespace-nowrap;
+  }
+
+  .table-base {
+    @apply w-full text-sm text-ink;
+  }
+
+  .table-base thead {
+    @apply border-b border-line text-left text-xs font-semibold uppercase tracking-wide text-ink-3;
+  }
+
+  .table-base th {
+    @apply px-4 py-3;
+  }
+
+  .table-base td {
+    @apply px-4 py-3 align-middle;
+  }
+
+  .table-base tbody tr {
+    @apply border-b border-line/70 last:border-0;
+  }
+
+  .table-base tbody tr:hover {
+    @apply bg-paper-2/60;
+  }
+}
+
+/* Hide number input spinners - we provide our own steppers where needed. */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+/* Respect reduced-motion preferences. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -1,0 +1,249 @@
+// Library Website - Prisma schema
+// SQLite is used so the app runs with zero external setup.
+// Status/enum-like fields are String because SQLite has no native enums;
+// the allowed values are enforced in lib/constants.ts and validated with Zod.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ------------------------------------------------------------------ Users --
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         String   @default("MEMBER") // MEMBER | LIBRARIAN | ADMIN
+  phone        String?
+  address      String?
+  memberNo     String   @unique
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  loans         Loan[]
+  reviews       Review[]
+  fines         Fine[]
+  notifications Notification[]
+  sessions      Session[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+// --------------------------------------------------------------- Catalog --
+
+model Author {
+  id   String @id @default(cuid())
+  name String
+  slug String @unique
+  bio  String?
+
+  books BookAuthor[]
+}
+
+model Genre {
+  id    String @id @default(cuid())
+  name  String @unique
+  slug  String @unique
+
+  books BookGenre[]
+}
+
+model Book {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  isbn        String?  @unique
+  publisher   String?
+  year        Int?
+  edition     String?
+  pages       Int?
+  description String?
+  coverUrl    String?
+  status      String   @default("AVAILABLE") // AVAILABLE | BORROWED | RESERVED | MAINTENANCE | RETIRED
+
+  // Shelf category is the broad grouping (Fiction, Science, Biography...),
+  // distinct from the finer-grained genres a title also carries.
+  category    String   @default("Fiction")
+
+  // Fees are stored in integer cents. Never floats.
+  borrowFeeCents  Int @default(0) // 0 = free to borrow
+  rentalFeeCents  Int? // null = not available for rental
+  overdueFinePerDayCents Int @default(50)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  authors BookAuthor[]
+  genres  BookGenre[]
+  copies  BookCopy[]
+  loans   Loan[]
+  reviews Review[]
+
+  @@index([title])
+  @@index([status])
+  @@index([category])
+}
+
+model BookAuthor {
+  bookId   String
+  authorId String
+  book     Book   @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  author   Author @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@id([bookId, authorId])
+  @@index([authorId])
+}
+
+model BookGenre {
+  bookId  String
+  genreId String
+  book    Book  @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  genre   Genre @relation(fields: [genreId], references: [id], onDelete: Cascade)
+
+  @@id([bookId, genreId])
+  @@index([genreId])
+}
+
+model BookCopy {
+  id       String @id @default(cuid())
+  bookId   String
+  barcode  String @unique
+  status   String @default("AVAILABLE") // AVAILABLE | ON_LOAN | RESERVED | DAMAGED | LOST
+  addedAt  DateTime @default(now())
+
+  book  Book   @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  loans Loan[]
+
+  @@index([bookId])
+  @@index([status])
+}
+
+// -------------------------------------------------------------- Borrowing --
+
+model Loan {
+  id       String @id @default(cuid())
+  userId   String
+  bookId   String
+  copyId   String?
+  type     String @default("BORROW") // BORROW | RENTAL
+  status   String @default("PENDING") // PENDING | APPROVED | ACTIVE | RETURNED | REJECTED | CANCELLED
+
+  periodWeeks  Int      @default(2)
+  requestedAt  DateTime @default(now())
+  approvedAt   DateTime?
+  startedAt    DateTime?
+  dueAt        DateTime?
+  returnedAt   DateTime?
+  renewalsUsed Int      @default(0)
+
+  // Snapshot of the fee at approval time. Later price changes never
+  // rewrite history.
+  feeCents Int @default(0)
+
+  user User  @relation(fields: [userId], references: [id])
+  book Book  @relation(fields: [bookId], references: [id])
+  copy BookCopy? @relation(fields: [copyId], references: [id])
+
+  events LoanEvent[]
+  fines  Fine[]
+
+  @@index([status])
+  @@index([dueAt])
+  @@index([userId])
+  @@index([bookId])
+}
+
+// Append-only audit trail. Every state change is recorded.
+model LoanEvent {
+  id        String    @id @default(cuid())
+  loanId    String
+  from      String?
+  to        String
+  note      String?
+  actorId   String?
+  createdAt DateTime  @default(now())
+
+  loan Loan @relation(fields: [loanId], references: [id], onDelete: Cascade)
+
+  @@index([loanId])
+}
+
+model Fine {
+  id          String    @id @default(cuid())
+  userId      String
+  loanId      String?
+  amountCents Int
+  reason      String // OVERDUE | DAMAGED | LOST | RENTAL
+  status      String    @default("UNPAID") // UNPAID | PAID | WAIVED
+  note        String?
+  createdAt   DateTime  @default(now())
+  paidAt      DateTime?
+
+  user User  @relation(fields: [userId], references: [id])
+  loan Loan? @relation(fields: [loanId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+}
+
+// ------------------------------------------------- Content & community --
+
+model Announcement {
+  id          String    @id @default(cuid())
+  title       String
+  slug        String    @unique
+  excerpt     String?
+  body        String
+  pinned      Boolean   @default(false)
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  userId    String
+  bookId    String
+  rating    Int // 1..5, enforced by Zod
+  title     String?
+  body      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  book Book @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, bookId])
+  @@index([bookId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  body      String
+  href      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+}
