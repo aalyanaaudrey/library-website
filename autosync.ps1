@@ -75,17 +75,29 @@ function Get-ChangeCount {
 
 function Test-RemoteReachable {
     # Probes the remote using the same credential helper a real push uses, so
-    # it doubles as an auth check. Returns $false when offline.
-    git ls-remote --exit-code $Upstream HEAD 2>&1 | Out-Null
+    # it doubles as an auth check. Pass the REMOTE NAME, not a tracking ref -
+    # "origin/main" does not exist locally until the first push succeeds.
+    # Returns $false when offline.
+    git ls-remote --exit-code origin HEAD 2>&1 | Out-Null
     return ($LASTEXITCODE -eq 0)
 }
 
-function Invoke-Sync {
-    $pending = @(git rev-list --count "$Upstream..HEAD" 2>$null)
-    $pendingCount = 0
-    if ($pending -and $pending[0] -match '^\d+$') { $pendingCount = [int]$pending[0] }
+function Get-PendingCount {
+    # How many local commits have not reached origin/main yet.
+    $remoteRef = git rev-parse --verify --quiet "refs/remotes/origin/main" 2>$null
+    if ($remoteRef) {
+        $out = @(git rev-list --count "$remoteRef..HEAD" 2>$null)
+    } else {
+        # Never pushed successfully, so every commit is still pending.
+        $out = @(git rev-list --count "HEAD" 2>$null)
+    }
+    if ($out -and $out[0] -match '^\d+$') { return [int]$out[0] }
+    return 0
+}
 
-    $staged = Get-ChangeCount
+function Invoke-Sync {
+    $pendingCount = Get-PendingCount
+    $staged       = Get-ChangeCount
 
     if ($staged -gt 0) {
         git add -A 2>&1 | Out-Null
@@ -182,8 +194,7 @@ while ($true) {
         # commit that was held locally because the machine was offline.
         if (((Get-Date) - $lastFlush).TotalSeconds -ge 60) {
             $lastFlush = Get-Date
-            $pending = @(git rev-list --count "$Upstream..HEAD" 2>$null)
-            if ($pending -and $pending[0] -match '^\d+$' -and [int]$pending[0] -gt 0) {
+            if ((Get-PendingCount) -gt 0) {
                 Invoke-Sync
             }
         }
