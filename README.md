@@ -48,6 +48,36 @@ The seed creates 31 books, 30 authors, 20 genres, 119 physical copies,
 4 announcements and 11 reviews. The database file (`prisma/dev.db`) is
 git-ignored, so every fresh clone starts clean.
 
+## Deploying
+
+The app is a plain Node server, so any host works. Two things a container
+host must provide:
+
+1. **`DATABASE_URL`** — otherwise the first page render throws
+   `Environment variable not found: DATABASE_URL`.
+2. **A persistent disk** — Railway/Vercel container filesystems are wiped on
+   every deploy and restart, so SQLite must live on an attached volume.
+
+### Railway
+
+1. **Service → Settings → Volume** → add one, mount path `/data`.
+2. **Service → Variables** → add:
+   ```
+   DATABASE_URL=file:/data/library.db
+   ```
+3. Push to GitHub; Railway rebuilds. The start command already runs
+   `prisma db push && tsx prisma/seed.ts && next start`, so the schema is
+   created and the demo data seeded on the first boot. The seed skips itself
+   on every later boot, so existing data is never wiped.
+4. Confirm the port Railway detected is **3000** (Settings → Networking).
+
+Volume is `file:/data/library.db` — absolute on purpose. A relative
+`file:./dev.db` resolves inside the build output and vanishes on redeploy.
+
+To move to a managed database later, add Railway's Postgres plugin, set
+`DATABASE_URL` to its connection string, and change `provider = "sqlite"` to
+`"postgresql"` in `prisma/schema.prisma`.
+
 ## Project skills
 
 Twelve focused skills are installed in `.opencode/skills/` for this stack:

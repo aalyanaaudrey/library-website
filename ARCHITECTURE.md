@@ -457,8 +457,8 @@ the offending inputs inline.
 
 | Concern | Choice |
 |---|---|
-| Hosting | Any Node host — `npm run build && npm start`. Vercel works but its serverless filesystem is read-only, so use a hosted Postgres there. |
-| Database | SQLite locally; swap to Postgres by changing one line in `prisma/schema.prisma` |
+| Hosting | Any Node host — `npm run build && npm start`. Railway: attach a volume and set `DATABASE_URL` to an absolute path on it. Vercel has a read-only filesystem, so use a hosted Postgres there. |
+| Database | SQLite locally and on a volume-backed container; swap to Postgres by changing one line in `prisma/schema.prisma` |
 | Covers | Open Library cover URLs (`covers.openlibrary.org`), stored per book |
 | Email | Out of scope for this build; `Notification` rows stand in for in-app mail |
 | Cron | The overdue sweep is a dashboard button; wire `runOverdueSweepAction` to a cron route for unattended runs |
@@ -468,8 +468,7 @@ the offending inputs inline.
 See `.env.example`:
 
 ```bash
-DATABASE_URL="file:./dev.db"
-AUTH_SECRET="<long random hex>"
+DATABASE_URL="file:./dev.db"     # production: absolute path on a volume
 SESSION_DURATION_DAYS="30"
 
 # Library rules
@@ -479,7 +478,17 @@ MAX_RENEWALS="2"
 OVERDUE_FINE_PER_DAY_CENTS="50"
 ```
 
-`.env` is git-ignored; `.env.example` is committed.
+`DATABASE_URL` is the only required variable; everything else has a working
+default. Sessions are rows in the `Session` table, so there is no signing
+secret to manage. `.env` is git-ignored; `.env.example` is committed.
+
+### Boot sequence
+
+`npm start` runs `prisma db push && tsx prisma/seed.ts && next start`.
+`db push` is idempotent and the seed self-guards (it exits immediately if any
+user row exists, unless `--force` is passed), so both are safe to run on every
+container start. That is what makes a fresh volume populate itself on first
+boot without wiping data on later ones.
 
 ---
 
