@@ -29,7 +29,9 @@ Production build: `npm run build && npm start`.
 Other scripts: `npm run db:reset` (drop and reseed), `npm run db:studio`,
 `npm run db:seed`.
 
-Copy `.env.example` to `.env` and set `AUTH_SECRET` before deploying.
+`DATABASE_URL` is the only required variable — everything else has a working
+default. Copy `.env.example` to `.env` locally; in production set it in the
+host's dashboard (see [Deploying](#deploying)).
 
 ### Demo accounts
 
