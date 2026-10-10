@@ -461,6 +461,18 @@ const ANNOUNCEMENTS = [
 ];
 
 async function main() {
+  // The seed wipes every table, so it must never run against a populated
+  // database. Production starts with `prisma db push && tsx prisma/seed.ts`
+  // on every boot; the guard makes that a no-op once the data exists.
+  if (!process.argv.includes("--force")) {
+    const existing = await db.user.count();
+    if (existing > 0) {
+      console.log(`Database already seeded (${existing} user(s)) — nothing to do.`);
+      await db.$disconnect();
+      return;
+    }
+  }
+
   console.log("Seeding database...");
 
   // Wipe in dependency order.
